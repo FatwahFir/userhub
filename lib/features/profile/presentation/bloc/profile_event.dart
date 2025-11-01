@@ -23,3 +23,12 @@ class ProfileUpdated extends ProfileEvent {
 class ProfileErrorCleared extends ProfileEvent {
   const ProfileErrorCleared();
 }
+
+class ProfileAuthSynced extends ProfileEvent {
+  final User? user;
+
+  const ProfileAuthSynced(this.user);
+
+  @override
+  List<Object?> get props => [user];
+}

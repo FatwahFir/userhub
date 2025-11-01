@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -13,6 +15,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final GetProfile getProfile;
   final UpdateProfile updateProfile;
   final AuthBloc authBloc;
+  late final StreamSubscription _authSubscription;
 
   ProfileBloc({
     required this.getProfile,
@@ -29,6 +32,16 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     on<ProfileRequested>(_onProfileRequested);
     on<ProfileUpdated>(_onProfileUpdated);
     on<ProfileErrorCleared>(_onProfileErrorCleared);
+    on<ProfileAuthSynced>(_onProfileAuthSynced);
+
+    _authSubscription = authBloc.stream.listen((authState) {
+      if (authState.status == AuthStatus.authenticated &&
+          authState.user != null) {
+        add(ProfileAuthSynced(authState.user));
+      } else if (authState.status == AuthStatus.unauthenticated) {
+        add(const ProfileAuthSynced(null));
+      }
+    });
   }
 
   Future<void> _onProfileRequested(
@@ -107,5 +120,33 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         updateSuccess: false,
       ),
     );
+  }
+
+  void _onProfileAuthSynced(
+    ProfileAuthSynced event,
+    Emitter<ProfileState> emit,
+  ) {
+    final user = event.user;
+    if (user == null) {
+      emit(const ProfileState());
+      return;
+    }
+    if (state.user?.id == user.id && state.status == ProfileStatus.loaded) {
+      return;
+    }
+    emit(
+      state.copyWith(
+        status: ProfileStatus.loaded,
+        user: user,
+        clearError: true,
+        updateSuccess: false,
+      ),
+    );
+  }
+
+  @override
+  Future<void> close() {
+    _authSubscription.cancel();
+    return super.close();
   }
 }
