@@ -1,16 +1,70 @@
-# userhub
+# UserHub
 
-A new Flutter project.
+UserHub is a Flutter application that showcases authentication, profile management, and user listing features built with BLoC, GoRouter, Retrofit, and Hydrated storage.
 
-## Getting Started
+## Prerequisites
 
-This project is a starting point for a Flutter application.
+- Flutter SDK (3.5 or newer) with the Flutter binary available on your `PATH`
+- Dart SDK (bundled with Flutter)
+- An Android/iOS emulator or a connected device
+- Backend API reachable at the URL configured in `.env` (defaults to `http://localhost:8000/api/v1`)
 
-A few resources to get you started if this is your first Flutter project:
+## Environment Setup
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+1. Copy the example environment file and provide your backend settings:
+   ```bash
+   cp .env.example .env
+   ```
+   Update `API_BASE_URL` (and other variables if needed) inside `.env`.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+2. Make sure the Flutter cache directory is writable. If you see permission errors when running commands, fix them with:
+   ```bash
+   sudo chown -R $(whoami) /Users/user/Development/flutter/bin/cache
+   sudo chown -R $(whoami) /Users/user/.dart-tool
+   ```
+
+## Installing Dependencies
+
+```bash
+flutter pub get
+```
+
+## Generate Retrofit & JSON Files
+
+```bash
+dart run build_runner build --delete-conflicting-outputs
+```
+
+## Running the App
+
+### On a Connected Device or Emulator
+
+```bash
+flutter run
+```
+
+### With a Specific Flavor / Target (Optional)
+
+```bash
+flutter run -d chrome
+flutter run -d ios
+flutter run -d android
+```
+
+## Running Static Analysis
+
+```bash
+flutter analyze
+dart format lib test
+```
+
+## Testing
+
+```bash
+flutter test
+```
+
+## Additional Notes
+
+- The application persists authentication state using Hydrated BLoC. Delete the app or clear storage if you want to reset local auth data.
+- Make sure the backend is running and allows connections from your device/emulator IP.
