@@ -1,11 +1,21 @@
+import 'package:json_annotation/json_annotation.dart';
+
 import '../../../../core/utils/url_utils.dart';
 import '../../domain/entities/user.dart';
 
+part 'user_model.g.dart';
+
+@JsonSerializable(fieldRename: FieldRename.snake, includeIfNull: false)
 class UserModel {
+  @JsonKey(defaultValue: 0)
   final int id;
+  @JsonKey(defaultValue: '')
   final String username;
+  @JsonKey(defaultValue: '')
   final String email;
+  @JsonKey(defaultValue: '')
   final String name;
+  @JsonKey(defaultValue: '')
   final String role;
   final String? avatarUrl;
   final String? phone;
@@ -24,17 +34,10 @@ class UserModel {
     this.updatedAt,
   });
 
-  factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
-        id: (json['id'] as num?)?.toInt() ?? 0,
-        username: json['username']?.toString() ?? '',
-        email: json['email']?.toString() ?? '',
-        name: json['name']?.toString() ?? '',
-        role: json['role']?.toString() ?? '',
-        avatarUrl: json['avatar_url']?.toString(),
-        phone: json['phone']?.toString(),
-        createdAt: json['created_at']?.toString(),
-        updatedAt: json['updated_at']?.toString(),
-      );
+  factory UserModel.fromJson(Map<String, dynamic> json) =>
+      _$UserModelFromJson(json);
+
+  Map<String, dynamic> toJson() => _$UserModelToJson(this);
 
   User toEntity() => User(
         id: id,

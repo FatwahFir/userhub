@@ -33,10 +33,14 @@ Future<void> initDI(String baseUrl) async {
     ..registerLazySingleton<Dio>(
       () => DioClient.create(baseUrl, sl<SecureStorage>()).dio,
     )
+    ..registerLazySingleton<AuthApi>(() => AuthApi(sl<Dio>()))
+    ..registerLazySingleton<ProfileApi>(() => ProfileApi(sl<Dio>()))
+    ..registerLazySingleton<UserApi>(() => UserApi(sl<Dio>()))
 
     // Auth
     ..registerLazySingleton<AuthRemoteDataSource>(
-      () => AuthRemoteDataSourceImpl(sl<Dio>(), sl<SecureStorage>()),
+      () => AuthRemoteDataSourceImpl(
+          sl<AuthApi>(), sl<Dio>(), sl<SecureStorage>()),
     )
     ..registerLazySingleton<AuthRepository>(
       () => AuthRepositoryImpl(sl<AuthRemoteDataSource>()),
@@ -57,10 +61,11 @@ Future<void> initDI(String baseUrl) async {
 
     // Profile
     ..registerLazySingleton<ProfileRemoteDataSource>(
-      () => ProfileRemoteDataSourceImpl(sl<Dio>()),
+      () => ProfileRemoteDataSourceImpl(sl<ProfileApi>()),
     )
     ..registerLazySingleton<ProfileRepository>(
-      () => ProfileRepositoryImpl(sl<ProfileRemoteDataSource>(), sl<SecureStorage>()),
+      () => ProfileRepositoryImpl(
+          sl<ProfileRemoteDataSource>(), sl<SecureStorage>()),
     )
     ..registerLazySingleton(() => GetProfile(sl()))
     ..registerLazySingleton(() => UpdateProfile(sl()))
@@ -74,7 +79,7 @@ Future<void> initDI(String baseUrl) async {
 
     // Users
     ..registerLazySingleton<UserRemoteDataSource>(
-      () => UserRemoteDataSourceImpl(sl<Dio>()),
+      () => UserRemoteDataSourceImpl(sl<UserApi>()),
     )
     ..registerLazySingleton<UserRepository>(
       () => UserRepositoryImpl(sl<UserRemoteDataSource>()),

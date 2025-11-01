@@ -1,11 +1,28 @@
 import 'package:dio/dio.dart';
+import 'package:retrofit/retrofit.dart';
 
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/utils/api_envelope.dart';
 import '../../../../core/utils/error_parser.dart';
 import '../../../../core/utils/paged_result.dart';
-import '../../../../core/utils/typedefs.dart';
 import '../../../auth/data/models/user_model.dart';
+
+part 'user_remote_datasource.g.dart';
+
+@RestApi()
+abstract class UserApi {
+  factory UserApi(Dio dio, {String baseUrl}) = _UserApi;
+
+  @GET('/users')
+  Future<ApiEnvelope<List<UserModel>>> getUsers(
+    @Query('page') int page,
+    @Query('size') int size,
+    @Query('q') String? query,
+  );
+
+  @GET('/users/{id}')
+  Future<ApiEnvelope<UserModel>> getUserDetail(@Path('id') int id);
+}
 
 abstract class UserRemoteDataSource {
   Future<PagedResult<UserModel>> getUsers({
@@ -18,9 +35,9 @@ abstract class UserRemoteDataSource {
 }
 
 class UserRemoteDataSourceImpl implements UserRemoteDataSource {
-  final Dio _dio;
+  final UserApi _api;
 
-  UserRemoteDataSourceImpl(this._dio);
+  UserRemoteDataSourceImpl(this._api);
 
   @override
   Future<PagedResult<UserModel>> getUsers({
@@ -29,26 +46,11 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
     String? query,
   }) async {
     try {
-      final response = await _dio.get<JsonMap>(
-        '/users',
-        queryParameters: {
-          'page': page,
-          'size': size,
-          if (query != null && query.isNotEmpty) 'q': query,
-        },
-      );
-
-      final envelope = ApiEnvelope<List<UserModel>>.fromJson(
-        response.data ?? <String, dynamic>{},
-        (json) => (json as List<dynamic>)
-            .map((item) => UserModel.fromJson(item as JsonMap))
-            .toList(),
-      );
-
+      final envelope = await _api.getUsers(page, size, query);
       if (!envelope.success || envelope.data == null) {
         throw ServerException(
           message: envelope.error?.message ?? 'Failed to load users',
-          statusCode: response.statusCode ?? 400,
+          statusCode: 400,
         );
       }
 
@@ -68,16 +70,11 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
   @override
   Future<UserModel> getUserDetail(int id) async {
     try {
-      final response = await _dio.get<JsonMap>('/users/$id');
-      final envelope = ApiEnvelope<UserModel>.fromJson(
-        response.data ?? <String, dynamic>{},
-        (json) => UserModel.fromJson(json as JsonMap),
-      );
-
+      final envelope = await _api.getUserDetail(id);
       if (!envelope.success || envelope.data == null) {
         throw ServerException(
           message: envelope.error?.message ?? 'Failed to load user detail',
-          statusCode: response.statusCode ?? 400,
+          statusCode: 400,
         );
       }
 

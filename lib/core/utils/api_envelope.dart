@@ -1,4 +1,10 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'api_envelope.g.dart';
+
+@JsonSerializable(genericArgumentFactories: true)
 class ApiEnvelope<T> {
+  @JsonKey(defaultValue: false)
   final bool success;
   final T? data;
   final ApiError? error;
@@ -16,41 +22,40 @@ class ApiEnvelope<T> {
   factory ApiEnvelope.fromJson(
     Map<String, dynamic> json,
     T Function(Object? json) fromJsonT,
-  ) {
-    return ApiEnvelope<T>(
-      success: json['success'] as bool? ?? false,
-      data: json['data'] == null ? null : fromJsonT(json['data']),
-      error: json['error'] == null
-          ? null
-          : ApiError.fromJson(json['error'] as Map<String, dynamic>),
-      pagination: json['pagination'] == null
-          ? null
-          : Pagination.fromJson(json['pagination'] as Map<String, dynamic>),
-      meta: (json['meta'] as Map<String, dynamic>?)?.map(
-        (key, value) => MapEntry(key, value),
-      ),
-    );
-  }
+  ) =>
+      _$ApiEnvelopeFromJson(json, fromJsonT);
+
+  Map<String, dynamic> toJson(
+    Object? Function(T value) toJsonT,
+  ) =>
+      _$ApiEnvelopeToJson(this, toJsonT);
 }
 
+@JsonSerializable()
 class ApiError {
+  @JsonKey(defaultValue: '')
   final String code;
+  @JsonKey(defaultValue: '')
   final String message;
   final dynamic details;
 
   const ApiError({required this.code, required this.message, this.details});
 
-  factory ApiError.fromJson(Map<String, dynamic> json) => ApiError(
-        code: json['code']?.toString() ?? '',
-        message: json['message']?.toString() ?? '',
-        details: json['details'],
-      );
+  factory ApiError.fromJson(Map<String, dynamic> json) =>
+      _$ApiErrorFromJson(json);
+
+  Map<String, dynamic> toJson() => _$ApiErrorToJson(this);
 }
 
+@JsonSerializable(fieldRename: FieldRename.snake)
 class Pagination {
+  @JsonKey(defaultValue: 1)
   final int page;
+  @JsonKey(defaultValue: 0)
   final int pageSize;
+  @JsonKey(defaultValue: 0)
   final int total;
+  @JsonKey(defaultValue: 0)
   final int totalPages;
 
   const Pagination({
@@ -60,10 +65,8 @@ class Pagination {
     required this.totalPages,
   });
 
-  factory Pagination.fromJson(Map<String, dynamic> json) => Pagination(
-        page: (json['page'] as num?)?.toInt() ?? 1,
-        pageSize: (json['page_size'] as num?)?.toInt() ?? 0,
-        total: (json['total'] as num?)?.toInt() ?? 0,
-        totalPages: (json['total_pages'] as num?)?.toInt() ?? 0,
-      );
+  factory Pagination.fromJson(Map<String, dynamic> json) =>
+      _$PaginationFromJson(json);
+
+  Map<String, dynamic> toJson() => _$PaginationToJson(this);
 }

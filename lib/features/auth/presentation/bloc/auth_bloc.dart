@@ -1,7 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/errors/failures.dart';
 import '../../../../core/services/secure_storage.dart';
 import '../../../../core/utils/url_utils.dart';
 import '../../../auth/domain/entities/user.dart';
@@ -69,7 +68,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthLoginRequested event,
     Emitter<AuthState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true, errorMessage: null, forgotPasswordEmailSent: false));
+    emit(state.copyWith(
+        isLoading: true, errorMessage: null, forgotPasswordEmailSent: false));
     final result = await loginUsecase(
       AuthCredentials(username: event.username, password: event.password),
     );
@@ -141,7 +141,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthForgotPasswordRequested event,
     Emitter<AuthState> emit,
   ) async {
-    emit(state.copyWith(isLoading: true, errorMessage: null, forgotPasswordEmailSent: false));
+    emit(state.copyWith(
+        isLoading: true, errorMessage: null, forgotPasswordEmailSent: false));
     final result = await forgotUsecase(event.email);
 
     result.fold(
@@ -172,12 +173,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     await result.fold<Future<void>>(
       (failure) async {
-        if (failure is ServerFailure && failure.statusCode == 401) {
-          await storage.clear();
-          emit(const AuthState.unauthenticated());
-        } else {
-          emit(state.copyWith(isLoading: false, errorMessage: failure.message));
-        }
+        await storage.clear();
+        emit(
+          AuthState(
+            status: AuthStatus.unauthenticated,
+            user: null,
+            token: null,
+            isLoading: false,
+            errorMessage: failure.message,
+            forgotPasswordEmailSent: false,
+          ),
+        );
       },
       (_) async {
         await storage.clear();

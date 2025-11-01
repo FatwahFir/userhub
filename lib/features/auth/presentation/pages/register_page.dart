@@ -106,6 +106,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       const SizedBox(height: 16),
                       TextFormField(
                         controller: _phoneController,
+                        keyboardType: TextInputType.phone,
                         decoration: const InputDecoration(
                           labelText: 'Phone Number',
                           prefixIcon: Icon(Iconsax.call),

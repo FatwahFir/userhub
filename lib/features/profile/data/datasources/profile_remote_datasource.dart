@@ -1,11 +1,24 @@
 import 'package:dio/dio.dart';
+import 'package:retrofit/retrofit.dart';
 
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/utils/api_envelope.dart';
 import '../../../../core/utils/error_parser.dart';
-import '../../../../core/utils/typedefs.dart';
 import '../../../auth/data/models/user_model.dart';
 import '../../domain/usecases/update_profile.dart';
+
+part 'profile_remote_datasource.g.dart';
+
+@RestApi()
+abstract class ProfileApi {
+  factory ProfileApi(Dio dio, {String baseUrl}) = _ProfileApi;
+
+  @GET('/me')
+  Future<ApiEnvelope<UserModel>> getProfile();
+
+  @POST('/me')
+  Future<ApiEnvelope<UserModel>> updateProfile(@Body() FormData body);
+}
 
 abstract class ProfileRemoteDataSource {
   Future<UserModel> getProfile();
@@ -13,22 +26,18 @@ abstract class ProfileRemoteDataSource {
 }
 
 class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
-  final Dio _dio;
+  final ProfileApi _api;
 
-  ProfileRemoteDataSourceImpl(this._dio);
+  ProfileRemoteDataSourceImpl(this._api);
 
   @override
   Future<UserModel> getProfile() async {
     try {
-      final response = await _dio.get<JsonMap>('/me');
-      final envelope = ApiEnvelope<UserModel>.fromJson(
-        response.data ?? <String, dynamic>{},
-        (json) => UserModel.fromJson(json as JsonMap),
-      );
+      final envelope = await _api.getProfile();
       if (!envelope.success || envelope.data == null) {
         throw ServerException(
           message: envelope.error?.message ?? 'Failed to load profile',
-          statusCode: response.statusCode ?? 400,
+          statusCode: 400,
         );
       }
       return envelope.data!;
@@ -49,19 +58,11 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
           'avatar': await MultipartFile.fromFile(payload.avatarPath!),
       });
 
-      final response = await _dio.post<JsonMap>(
-        '/me',
-        data: data,
-        options: Options(contentType: 'multipart/form-data'),
-      );
-      final envelope = ApiEnvelope<UserModel>.fromJson(
-        response.data ?? <String, dynamic>{},
-        (json) => UserModel.fromJson(json as JsonMap),
-      );
+      final envelope = await _api.updateProfile(data);
       if (!envelope.success || envelope.data == null) {
         throw ServerException(
           message: envelope.error?.message ?? 'Failed to update profile',
-          statusCode: response.statusCode ?? 400,
+          statusCode: 400,
         );
       }
       return envelope.data!;

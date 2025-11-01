@@ -1,12 +1,33 @@
 import 'package:dio/dio.dart';
+import 'package:retrofit/retrofit.dart';
 
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/services/secure_storage.dart';
 import '../../../../core/utils/api_envelope.dart';
 import '../../../../core/utils/error_parser.dart';
-import '../../../../core/utils/typedefs.dart';
 import '../models/auth_model.dart';
 import '../models/message_model.dart';
+
+part 'auth_remote_datasource.g.dart';
+
+@RestApi()
+abstract class AuthApi {
+  factory AuthApi(Dio dio, {String baseUrl}) = _AuthApi;
+
+  @POST('/auth/login')
+  Future<ApiEnvelope<AuthModel>> login(@Body() Map<String, dynamic> body);
+
+  @POST('/auth/register')
+  Future<ApiEnvelope<AuthModel>> register(@Body() FormData body);
+
+  @POST('/auth/forgot-password')
+  Future<ApiEnvelope<MessageModel>> forgotPassword(
+    @Body() Map<String, dynamic> body,
+  );
+
+  @POST('/auth/logout')
+  Future<ApiEnvelope<MessageModel>> logout();
+}
 
 abstract class AuthRemoteDataSource {
   Future<AuthModel> login(String username, String password);
@@ -23,31 +44,23 @@ abstract class AuthRemoteDataSource {
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
+  final AuthApi _api;
   final Dio _dio;
   final SecureStorage _storage;
 
-  AuthRemoteDataSourceImpl(this._dio, this._storage);
+  AuthRemoteDataSourceImpl(this._api, this._dio, this._storage);
 
   @override
   Future<AuthModel> login(String username, String password) async {
     try {
-      final response = await _dio.post<JsonMap>(
-        '/auth/login',
-        data: {
-          'username': username,
-          'password': password,
-        },
-      );
-
-      final envelope = ApiEnvelope<AuthModel>.fromJson(
-        response.data ?? <String, dynamic>{},
-        (json) => AuthModel.fromJson(json as JsonMap),
-      );
-
+      final envelope = await _api.login({
+        'username': username,
+        'password': password,
+      });
       if (!envelope.success || envelope.data == null) {
         throw ServerException(
           message: envelope.error?.message ?? 'Login failed',
-          statusCode: response.statusCode ?? 400,
+          statusCode: 400,
         );
       }
 
@@ -77,21 +90,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         if (phone != null) 'phone': phone,
       });
 
-      final response = await _dio.post<JsonMap>(
-        '/auth/register',
-        data: formData,
-        options: Options(contentType: 'multipart/form-data'),
-      );
-
-      final envelope = ApiEnvelope<AuthModel>.fromJson(
-        response.data ?? <String, dynamic>{},
-        (json) => AuthModel.fromJson(json as JsonMap),
-      );
-
+      final envelope = await _api.register(formData);
       if (!envelope.success || envelope.data == null) {
         throw ServerException(
           message: envelope.error?.message ?? 'Register failed',
-          statusCode: response.statusCode ?? 400,
+          statusCode: 400,
         );
       }
 
@@ -105,20 +108,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> forgotPassword(String email) async {
     try {
-      final response = await _dio.post<JsonMap>(
-        '/auth/forgot-password',
-        data: {'email': email},
-      );
-
-      final envelope = ApiEnvelope<MessageModel>.fromJson(
-        response.data ?? <String, dynamic>{},
-        (json) => MessageModel.fromJson(json as JsonMap),
-      );
+      final envelope = await _api.forgotPassword({'email': email});
 
       if (!envelope.success) {
         throw ServerException(
           message: envelope.error?.message ?? 'Request failed',
-          statusCode: response.statusCode ?? 400,
+          statusCode: 400,
         );
       }
     } on DioException catch (error) {
@@ -129,11 +124,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> logout() async {
     try {
-      await _dio.post<JsonMap>('/auth/logout');
-      _dio.options.headers.remove('Authorization');
-      await _storage.clear();
+      await _api.logout();
     } on DioException catch (error) {
       throw _mapDioError(error);
+    } finally {
+      _dio.options.headers.remove('Authorization');
+      await _storage.clear();
     }
   }
 
