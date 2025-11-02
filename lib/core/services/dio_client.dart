@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
@@ -41,6 +43,9 @@ class DioClient {
                 ? ''
                 : ' (${DateTime.now().difference(start).inMilliseconds}ms)';
             debugPrint('← ${response.statusCode} ${response.realUri}$elapsed');
+            if (response.data != null) {
+              debugPrint(_prettyJson(response.data));
+            }
           }
           handler.next(response);
         },
@@ -55,6 +60,9 @@ class DioClient {
               '${error.requestOptions.method} ${error.requestOptions.uri}$elapsed '
               '- ${error.message}',
             );
+            if (error.response?.data != null) {
+              debugPrint(_prettyJson(error.response!.data));
+            }
           }
           handler.next(error);
         },
@@ -81,5 +89,18 @@ class DioClient {
     );
 
     return DioClient._(dio);
+  }
+}
+
+String _prettyJson(dynamic data) {
+  try {
+    const encoder = JsonEncoder.withIndent('  ');
+    if (data is String) {
+      final decoded = json.decode(data);
+      return encoder.convert(decoded);
+    }
+    return encoder.convert(data);
+  } catch (_) {
+    return data.toString();
   }
 }

@@ -13,12 +13,14 @@ class UpdateProfile extends UsecaseWithParams<User, UpdateProfilePayload> {
 }
 
 class UpdateProfilePayload {
+  final String username;
   final String name;
   final String email;
   final String? phone;
   final String? avatarPath;
 
   UpdateProfilePayload({
+    required this.username,
     required this.name,
     required this.email,
     this.phone,

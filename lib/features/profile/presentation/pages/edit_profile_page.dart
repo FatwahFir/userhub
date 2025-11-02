@@ -19,6 +19,7 @@ class EditProfilePage extends StatefulWidget {
 
 class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _usernameController;
   late final TextEditingController _nameController;
   late final TextEditingController _emailController;
   late final TextEditingController _phoneController;
@@ -28,6 +29,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   void initState() {
     super.initState();
+    _usernameController = TextEditingController();
     _nameController = TextEditingController();
     _emailController = TextEditingController();
     _phoneController = TextEditingController();
@@ -38,12 +40,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    _usernameController.dispose();
     super.dispose();
   }
 
   void _populate(User? user) {
     if (user == null || _initialized) return;
     _initialized = true;
+    _usernameController.text = user.username;
     _nameController.text = user.name;
     _emailController.text = user.email;
     _phoneController.text = user.phone ?? '';
@@ -63,6 +67,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     context.read<ProfileBloc>().add(
           ProfileUpdated(
             UpdateProfilePayload(
+              username: _usernameController.text.trim(),
               name: _nameController.text.trim(),
               email: _emailController.text.trim(),
               phone: _phoneController.text.trim().isEmpty
@@ -222,6 +227,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                     ],
                                   ),
                                   const SizedBox(height: 20),
+                                  TextFormField(
+                                    controller: _usernameController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Username',
+                                      prefixIcon: Icon(Iconsax.user),
+                                    ),
+                                    validator: (value) =>
+                                        value == null || value.isEmpty
+                                            ? 'Required'
+                                            : null,
+                                  ),
+                                  const SizedBox(height: 16),
                                   TextFormField(
                                     controller: _nameController,
                                     decoration: const InputDecoration(

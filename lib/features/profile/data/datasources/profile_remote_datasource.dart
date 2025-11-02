@@ -51,6 +51,7 @@ class ProfileRemoteDataSourceImpl implements ProfileRemoteDataSource {
     try {
       final data = FormData.fromMap({
         '_method': 'PUT',
+        'username': payload.username,
         'name': payload.name,
         'email': payload.email,
         if (payload.phone != null) 'phone': payload.phone,
